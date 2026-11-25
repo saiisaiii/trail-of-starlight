@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Trail of Starlight: An Adventure Through Meteor Showers</title>
+<meta name="description" content="A comic-style story for children about how meteor showers happen. Follow Bunny and a friendly alien through space.">
+<meta property="og:title" content="A Trail of Starlight">
+<meta property="og:description" content="An Adventure Through Meteor Showers. A comic-style story for children.">
+<meta property="og:image" content="img/cover.jpg">
+<meta name="theme-color" content="#170f33">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%98%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #170f33;
+    --dusk: #2b1f57;
+    --comet: #8fd6e8;
+    --periwinkle: #8fa8ff;
+    --lavender: #c9a8ff;
+    --paper: #f4f0ff;
+    --bar-h: 76px;
+    --font: "Gaegu", "Chalkboard SE", "Comic Sans MS", "Segoe Print", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    overflow: hidden;
+    color: var(--paper);
+    font-family: var(--font);
+    background:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff8 50%, transparent 51%),
+      radial-gradient(1px 1px at 28% 72%, #fff9 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 44% 9%, #cfe8ffaa 50%, transparent 51%),
+      radial-gradient(1px 1px at 63% 83%, #fff8 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 78% 22%, #fff9 50%, transparent 51%),
+      radial-gradient(1px 1px at 91% 64%, #cfe8ffaa 50%, transparent 51%),
+      radial-gradient(1px 1px at 5% 51%, #fff8 50%, transparent 51%),
+      radial-gradient(1px 1px at 55% 47%, #fff6 50%, transparent 51%),
+      radial-gradient(ellipse at 50% 0%, var(--dusk), var(--night) 70%);
+  }
+
+  .reader {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: 1fr var(--bar-h);
+    justify-items: center;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* The page area keeps the 4:3 shape of the artwork at any window size */
+  .stage-wrap { display: grid; place-items: center; width: 100%; min-height: 0; padding: 10px 10px 0; }
+  .stage {
+    position: relative;
+    width: min(100%, calc((100dvh - var(--bar-h) - 10px - env(safe-area-inset-top, 0px)) * 4 / 3));
+    aspect-ratio: 4 / 3;
+    perspective: 2400px;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .leaf {
+    position: absolute; inset: 0;
+    transform-origin: left center;
+    backface-visibility: hidden;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--dusk);
+    box-shadow: 0 18px 50px #0009, 0 2px 0 #ffffff14 inset;
+  }
+  .leaf img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+  .shade { position: absolute; inset: 0; background: linear-gradient(90deg, #0a061e00 0%, #0a061ecc 100%); opacity: 0; pointer-events: none; }
+
+  /* Invisible tap zones: left half goes back, right half goes forward */
+  .zone { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 5; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .zone.prev { left: 0; } .zone.next { right: 0; }
+  .zone:focus-visible { outline: 3px solid var(--comet); outline-offset: -3px; }
+
+  /* Start screen */
+  .cover-veil {
+    position: absolute; inset: 0; z-index: 8;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 12px;
+    padding: 4% 6%;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #170f3300 35%, #170f33d9 100%);
+    text-align: center;
+  }
+  .cover-veil[hidden] { display: none; }
+  .cover-veil .hint { margin: 0; font-size: clamp(15px, 2.2vw, 20px); color: var(--paper); text-shadow: 0 1px 6px #000a; }
+  .portrait-tip { display: none; position: absolute; top: calc(100% + 16px); left: 0; right: 0; margin: 0; text-align: center; font-size: 20px; color: var(--periwinkle); }
+  @media (orientation: portrait) and (max-width: 700px) { .portrait-tip { display: block; } }
+  @media (max-width: 700px) {
+    .cover-veil { padding: 3%; }
+    .cover-veil .hint { display: none; }
+    .cover-veil .primary, .cover-veil .ghost { min-height: 44px; padding: 4px 14px; font-size: 17px; }
+    .cover-veil .btn-row { gap: 8px; flex-wrap: nowrap; }
+  }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+  button { font: inherit; color: inherit; }
+  .primary, .ghost {
+    min-height: 48px; padding: 8px 24px; border-radius: 999px; cursor: pointer;
+    font-weight: 700; font-size: clamp(18px, 2.6vw, 24px);
+  }
+  .primary { background: var(--comet); color: #10213a; border: 0; box-shadow: 0 6px 24px #8fd6e855; }
+  .primary:hover { background: #a8e3f1; }
+  .ghost { background: #170f33aa; border: 2px solid var(--periwinkle); color: var(--paper); }
+  .ghost:hover { background: #2b1f57; }
+
+  /* Bottom controls */
+  .bar {
+    width: min(100%, 760px);
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  .icon-btn {
+    width: 48px; height: 48px; flex: none; display: grid; place-items: center;
+    border-radius: 50%; cursor: pointer;
+    background: #8fa8ff26; border: 2px solid #8fa8ff66; color: var(--paper);
+  }
+  .icon-btn:hover:not(:disabled) { background: #8fa8ff4d; }
+  .icon-btn:disabled { opacity: .35; cursor: default; }
+  .icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn .off { display: none; }
+  .icon-btn[aria-pressed="true"] .on { display: none; }
+  .icon-btn[aria-pressed="true"] .off { display: block; }
+  #next .again { display: none; }
+  #next.is-end .go { display: none; }
+  #next.is-end .again { display: block; }
+
+  button:focus-visible { outline: 3px solid var(--comet); outline-offset: 3px; }
+
+  .progress { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .count { font-size: 22px; font-weight: 700; color: var(--periwinkle); min-width: 5.5ch; text-align: center; }
+  .dots { display: none; align-items: center; }
+  @media (min-width: 640px) { .dots { display: flex; } }
+  .dot { width: 26px; height: 32px; padding: 0; background: none; border: 0; cursor: pointer; display: grid; place-items: center; }
+  .dot::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #8fa8ff66; transition: transform .2s, background .2s; }
+  .dot:hover::before { background: var(--periwinkle); }
+  .dot[aria-current="page"]::before { background: var(--comet); transform: scale(1.5); box-shadow: 0 0 10px var(--comet); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) { .dot::before { transition: none; } }
+  /* Opening sequence */
+  .intro {
+    position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; text-align: center;
+    padding: 24px; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 40%, #2b1f57 0%, #170f33 55%, #0c0720 100%);
+    transition: opacity 1.6s ease;
+  }
+  .intro.done { opacity: 0; pointer-events: none; }
+  .intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .intro-text { position: relative; max-width: 900px; }
+  .intro .line { opacity: 0; filter: blur(10px); transition: opacity 1.6s ease, filter 1.6s ease; margin: 0; }
+  .intro .line.show { opacity: 1; filter: blur(0); }
+  .intro h1 { font-size: clamp(44px, 9vw, 104px); line-height: 1; color: var(--comet); text-shadow: 0 0 36px #8fd6e888; font-weight: 700; }
+  .intro .subtitle { font-size: clamp(22px, 4vw, 40px); color: var(--periwinkle); margin-top: 10px; }
+  .intro .presented { font-size: clamp(18px, 2.8vw, 28px); color: var(--lavender); margin-top: clamp(28px, 7vh, 64px); }
+  .intro .group { font-size: clamp(24px, 4vw, 38px); font-weight: 700; color: var(--paper); margin-top: 6px; }
+  .intro .names { font-size: clamp(16px, 2.4vw, 24px); color: var(--paper); opacity: 0; margin-top: 8px; }
+  .intro .names.show { opacity: .85; }
+  .intro-skip { position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 2;
+    min-height: 44px; padding: 4px 20px; border-radius: 999px; cursor: pointer; font-size: 18px; font-weight: 700;
+    background: #170f33aa; border: 2px solid #8fa8ff88; color: var(--paper); }
+  .intro-skip:hover { background: #2b1f57; }
+  @media (prefers-reduced-motion: reduce) { .intro, .intro .line { transition-duration: .4s; filter: none; } }
+</style>
+</head>
+<body>
+<div class="intro" id="intro" role="presentation">
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="intro-text">
+    <h1 class="line" id="lTitle">A Trail of Starlight</h1>
+    <p class="line subtitle" id="lSub">An Adventure Through Meteor Showers</p>
+    <p class="line presented" id="lPres">Presented to you by</p>
+    <p class="line group" id="lGroup">Group 1 &middot; 9 &ndash; Generosity</p>
+    <p class="line names" id="lNames">Bailon, De Mesa, Anonuevo, Bartolay, de Vera, Vicente</p>
+  </div>
+  <button class="intro-skip" id="introSkip" type="button">Skip</button>
+</div>
+<main class="reader">
+  <div class="stage-wrap">
+    <div class="stage" id="stage" role="group" aria-roledescription="book" aria-label="A Trail of Starlight">
+      <!-- page leaves are added here by the script -->
+      <button class="zone prev" id="zonePrev" aria-label="Previous page" tabindex="-1"></button>
+      <button class="zone next" id="zoneNext" aria-label="Next page" tabindex="-1"></button>
+      <div class="cover-veil" id="veil">
+        <div class="btn-row">
+          <button class="primary" id="openSound" type="button">Open the book</button>
+          <button class="ghost" id="openQuiet" type="button">Read without sound</button>
+        </div>
+        <p class="hint">Use the arrow keys, swipe, or tap the page edges to turn pages.</p>
+      </div>
+      <p class="portrait-tip">Tip: turn your phone sideways to see the pictures bigger.</p>
+    </div>
+  </div>
+
+  <nav class="bar" aria-label="Page controls">
+    <button class="icon-btn" id="prev" type="button" aria-label="Previous page" title="Previous page" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="progress">
+      <div class="dots" id="dots"></div>
+      <span class="count" id="count" aria-hidden="true">1 of 12</span>
+    </div>
+    <button class="icon-btn" id="next" type="button" aria-label="Next page" title="Next page">
+      <svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+      <svg class="again" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg>
+    </button>
+    <button class="icon-btn" id="sound" type="button" aria-label="Sound on" aria-pressed="false" title="Sound on or off (M)">
+      <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+      <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+    </button>
+  </nav>
+  <p class="sr-only" id="status" aria-live="polite"></p>
+</main>
+
+<noscript>
+  <style>.reader{display:none}body{overflow:auto}</style>
+  <div style="max-width:900px;margin:0 auto;padding:16px">
+    <h1>A Trail of Starlight</h1>
+    <p>Please turn on JavaScript to read this book with page turns, or scroll down to see the pages.</p>
+    <img src="img/page-01.webp" alt="Cover" style="width:100%"><img src="img/page-02.webp" alt="Page 2" style="width:100%">
+    <img src="img/page-03.webp" alt="Page 3" style="width:100%"><img src="img/page-04.webp" alt="Page 4" style="width:100%">
+    <img src="img/page-05.webp" alt="Page 5" style="width:100%"><img src="img/page-06.webp" alt="Page 6" style="width:100%">
+    <img src="img/page-07.webp" alt="Page 7" style="width:100%"><img src="img/page-08.webp" alt="Page 8" style="width:100%">
+    <img src="img/page-09.webp" alt="Page 9" style="width:100%"><img src="img/page-10.webp" alt="Page 10" style="width:100%">
+    <img src="img/page-11.webp" alt="Page 11" style="width:100%"><img src="img/page-12.webp" alt="References" style="width:100%">
+  </div>
+</noscript>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---- The pages. Edit the alt text here if you change a picture. ----
+  const PAGES = [
+    { src: "img/page-01.webp", alt: "Cover: A Trail of Starlight, An Adventure Through Meteor Showers. Bunny the astronaut and a green alien bunny sit below a comet with a glowing blue tail." },
+    { src: "img/page-02.webp", alt: "Bunny floats through space in a tiny space suit and spots a comet leaving a trail of tiny particles." },
+    { src: "img/page-03.webp", alt: "On the Moon, Bunny meets a friendly green alien who explains that comets shed pieces called debris." },
+    { src: "img/page-04.webp", alt: "A comet flies by with a long trail. The alien explains how dust and rocky bits spread along its path." },
+    { src: "img/page-05.webp", alt: "Bunny and the alien float beside the comet's trail as the debris slowly spreads out." },
+    { src: "img/page-06.webp", alt: "The comet's trail curves around the Sun, forming a long stream of debris." },
+    { src: "img/page-07.webp", alt: "Bunny sees blue-and-green Earth travelling around the Sun toward the comet's trail." },
+    { src: "img/page-08.webp", alt: "Tiny particles enter Earth's atmosphere and glow, making bright streaks of light called meteors." },
+    { src: "img/page-09.webp", alt: "Meteors streak across Earth's night sky. The alien explains that pieces that reach the ground are called meteorites." },
+    { src: "img/page-10.webp", alt: "Bunny and the alien watch shooting stars fall over a forest of pine trees." },
+    { src: "img/page-11.webp", alt: "The end: Bunny and the alien watch the stars twinkle, and Bunny remembers the journey whenever looking up at the sky." },
+    { src: "img/page-12.webp", alt: "References: three web pages about meteor showers from NASA SpacePlace, Journey Homeschool Academy and Space.com." }
+  ];
+  const N = PAGES.length;
+  const TURN_MS = 750;
+
+  const $ = (id) => document.getElementById(id);
+  const stage = $("stage"), veil = $("veil"), prevBtn = $("prev"), nextBtn = $("next");
+  const soundBtn = $("sound"), countEl = $("count"), dotsEl = $("dots"), statusEl = $("status");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  let cur = 0, busy = false, opened = false, muted = false;
+
+  // ---------- Sound (made with the browser's Web Audio, so no audio files are needed) ----------
+  let ctx = null, master = null, noiseBuf = null;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+
+  function initAudio() {
+    if (!AudioCtx) return;
+    if (!ctx) {
+      ctx = new AudioCtx();
+      master = ctx.createGain();
+      master.gain.value = 0.9;
+      master.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.2, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ctx.state === "suspended") ctx.resume();
+  }
+  const canPlay = () => ctx && !muted;
+
+  function envGain(t, peak, attack, release) {
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + release);
+    g.connect(master);
+    return g;
+  }
+
+  // Paper swish: filtered noise that sweeps up going forward and down going back
+  function playFlip(dir) {
+    if (!canPlay()) return;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.9;
+    const from = dir > 0 ? 500 : 3000, to = dir > 0 ? 3400 : 600;
+    bp.frequency.setValueAtTime(from, t);
+    bp.frequency.exponentialRampToValueAtTime(to, t + 0.5);
+    const g = envGain(t, 0.55, 0.08, 0.5);
+    src.connect(bp); bp.connect(g);
+    src.start(t, Math.random() * 0.5, 0.7);
+    // soft paper "pat" as the page settles
+    const o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(190, t + 0.5); o.frequency.exponentialRampToValueAtTime(80, t + 0.62);
+    const og = envGain(t + 0.5, 0.18, 0.01, 0.14);
+    o.connect(og); o.start(t + 0.5); o.stop(t + 0.8);
+  }
+
+  // Heavy cover thump plus a rustle
+  function playOpen() {
+    if (!canPlay()) return;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.3);
+    const og = envGain(t, 0.7, 0.01, 0.35);
+    o.connect(og); o.start(t); o.stop(t + 0.5);
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100;
+    const ng = envGain(t + 0.05, 0.35, 0.05, 0.45);
+    src.connect(lp); lp.connect(ng); src.start(t + 0.05, 0.1, 0.6);
+    setTimeout(() => playFlip(1), 220);
+  }
+
+  // A little falling "zip" with a sparkle
+  function playMeteor() {
+    if (!canPlay()) return;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = "triangle";
+    o.frequency.setValueAtTime(3400, t); o.frequency.exponentialRampToValueAtTime(520, t + 0.7);
+    const g = envGain(t, 0.06, 0.03, 0.65);
+    o.connect(g); o.start(t); o.stop(t + 0.8);
+    [2093, 2637].forEach((f, i) => {
+      const s = ctx.createOscillator(); s.type = "sine"; s.frequency.value = f;
+      const sg = envGain(t + 0.08 + i * 0.09, 0.035, 0.005, 0.35);
+      s.connect(sg); s.start(t + 0.08 + i * 0.09); s.stop(t + 0.7);
+    });
+  }
+
+  // Gentle ending chime
+  function playChime() {
+    if (!canPlay()) return;
+    const t = ctx.currentTime;
+    [659.25, 783.99, 987.77, 1318.51].forEach((f, i) => {
+      const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = f;
+      const g = envGain(t + i * 0.16, 0.09, 0.01, 1.4);
+      o.connect(g); o.start(t + i * 0.16); o.stop(t + i * 0.16 + 1.6);
+    });
+  }
+
+  // Extra sounds that match the story (page numbers are 1-based)
+  const PAGE_SOUNDS = {
+    8: () => playMeteor(),
+    9: () => { playMeteor(); setTimeout(playMeteor, 380); },
+    10: () => { playMeteor(); setTimeout(playMeteor, 300); setTimeout(playMeteor, 700); },
+    11: () => playChime()
+  };
+
+  function setMuted(m, save = true) {
+    muted = m;
+    soundBtn.setAttribute("aria-pressed", String(m));
+    soundBtn.setAttribute("aria-label", m ? "Sound off" : "Sound on");
+    if (save) { try { localStorage.setItem("starlight-muted", m ? "1" : "0"); } catch (e) {} }
+  }
+
+  // ---------- Pages ----------
+  function makeLeaf(i) {
+    const leaf = document.createElement("div");
+    leaf.className = "leaf";
+    const img = new Image();
+    img.src = PAGES[i].src; img.alt = PAGES[i].alt; img.decoding = "async"; img.draggable = false;
+    const shade = document.createElement("div"); shade.className = "shade";
+    leaf.append(img, shade);
+    return { leaf, img, shade };
+  }
+
+  function updateUI() {
+    countEl.textContent = (cur + 1) + " of " + N;
+    prevBtn.disabled = cur === 0;
+    const last = cur === N - 1;
+    nextBtn.classList.toggle("is-end", last);
+    nextBtn.setAttribute("aria-label", last ? "Read again from the start" : "Next page");
+    nextBtn.title = last ? "Read again" : "Next page";
+    dotsEl.querySelectorAll(".dot").forEach((d, i) => {
+      if (i === cur) d.setAttribute("aria-current", "page"); else d.removeAttribute("aria-current");
+    });
+    statusEl.textContent = "Page " + (cur + 1) + " of " + N + ". " + PAGES[cur].alt;
+    try { history.replaceState(null, "", cur === 0 ? location.pathname + location.search : "#" + (cur + 1)); } catch (e) {}
+  }
+
+  function preload(i) { if (i >= 0 && i < N) { const im = new Image(); im.src = PAGES[i].src; } }
+
+  async function turnTo(to) {
+    if (busy || to === cur || to < 0 || to >= N) return;
+    busy = true;
+    const dir = to > cur ? 1 : -1;
+    const old = stage.querySelector(".leaf");
+    const nu = makeLeaf(to);
+    try { await nu.img.decode(); } catch (e) {}
+
+    const ease = "cubic-bezier(.55,.1,.3,1)";
+    const flipOut = [{ transform: "rotateY(0deg)" }, { transform: "rotateY(-105deg)" }];
+    let anims;
+
+    if (reduceMotion.matches) {
+      stage.insertBefore(nu.leaf, stage.querySelector(".zone"));
+      anims = [nu.leaf.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: "forwards" })];
+    } else if (dir > 0) {
+      // the current page lifts off and turns over; the next page waits underneath
+      stage.insertBefore(nu.leaf, old);
+      old.style.zIndex = 2;
+      anims = [
+        old.animate(flipOut, { duration: TURN_MS, easing: ease, fill: "forwards" }),
+        old.querySelector(".shade").animate([{ opacity: 0 }, { opacity: 0.85 }], { duration: TURN_MS, easing: ease, fill: "forwards" }),
+        nu.shade.animate([{ opacity: 0.55 }, { opacity: 0 }], { duration: TURN_MS, easing: ease, fill: "forwards" })
+      ];
+    } else {
+      // going back: the earlier page turns back down on top
+      nu.leaf.style.zIndex = 2;
+      stage.insertBefore(nu.leaf, stage.querySelector(".zone"));
+      anims = [
+        nu.leaf.animate([...flipOut].reverse(), { duration: TURN_MS, easing: ease, fill: "forwards" }),
+        nu.shade.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: TURN_MS, easing: ease, fill: "forwards" }),
+        old.querySelector(".shade").animate([{ opacity: 0 }, { opacity: 0.55 }], { duration: TURN_MS, easing: ease, fill: "forwards" })
+      ];
+    }
+
+    playFlip(dir);
+    cur = to;
+    updateUI();
+    const extra = PAGE_SOUNDS[to + 1];
+    if (extra) setTimeout(extra, reduceMotion.matches ? 100 : 450);
+    preload(to + 1); preload(to - 1);
+
+    try { await Promise.all(anims.map((a) => a.finished)); } catch (e) {}
+    old.remove();
+    nu.leaf.style.zIndex = "";
+    nu.leaf.getAnimations().forEach((a) => a.cancel());
+    nu.shade.getAnimations().forEach((a) => a.cancel());
+    busy = false;
+  }
+
+  // ---------- Opening the book ----------
+  function openBook(withSound) {
+    if (opened) return;
+    opened = true;
+    if (withSound) { initAudio(); setMuted(false); } else { setMuted(true); }
+    veil.hidden = true;
+    if (withSound) playOpen();
+    // warm the cache so later page turns are instant
+    for (let i = 0; i < N; i++) setTimeout(() => preload(i), 300 + i * 120);
+    nextBtn.focus({ preventScroll: true });
+  }
+
+  function go(delta) {
+    if (!opened) { openBook(true); return; }
+    turnTo(cur + delta);
+  }
+  function goNext() {
+    if (!opened) { openBook(true); return; }
+    if (cur === N - 1) turnTo(0); else turnTo(cur + 1);
+  }
+
+  // ---------- Wire up controls ----------
+  $("openSound").addEventListener("click", () => openBook(true));
+  $("openQuiet").addEventListener("click", () => openBook(false));
+  prevBtn.addEventListener("click", () => go(-1));
+  nextBtn.addEventListener("click", goNext);
+  $("zonePrev").addEventListener("click", () => go(-1));
+  $("zoneNext").addEventListener("click", goNext);
+  soundBtn.addEventListener("click", () => {
+    if (muted) { initAudio(); setMuted(false); playFlip(1); } else { setMuted(true); }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const onButton = e.target instanceof HTMLButtonElement;
+    switch (e.key) {
+      case "ArrowRight": case "PageDown": e.preventDefault(); goNext(); break;
+      case "ArrowLeft": case "PageUp": e.preventDefault(); go(-1); break;
+      case " ": if (!onButton) { e.preventDefault(); goNext(); } break;
+      case "Home": e.preventDefault(); if (opened) turnTo(0); break;
+      case "End": e.preventDefault(); if (opened) turnTo(N - 1); break;
+      case "m": case "M": if (muted) { initAudio(); setMuted(false); } else setMuted(true); break;
+    }
+  });
+
+  // Swipe left for next page, swipe right for previous
+  let sx = 0, sy = 0, tracking = false;
+  stage.addEventListener("pointerdown", (e) => { sx = e.clientX; sy = e.clientY; tracking = true; });
+  stage.addEventListener("pointerup", (e) => {
+    if (!tracking) return; tracking = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      e.preventDefault();
+      dx < 0 ? goNext() : go(-1);
+      suppressClick = true; setTimeout(() => (suppressClick = false), 50);
+    }
+  });
+  let suppressClick = false;
+  stage.addEventListener("click", (e) => { if (suppressClick) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+
+  // Dots
+  for (let i = 0; i < N; i++) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "dot";
+    b.setAttribute("aria-label", "Go to page " + (i + 1));
+    b.addEventListener("click", () => { if (!opened) openBook(true); else turnTo(i); });
+    dotsEl.appendChild(b);
+  }
+
+  // ---------- Start ----------
+  try { muted = localStorage.getItem("starlight-muted") === "1"; } catch (e) {}
+  setMuted(muted, false);
+  if (!AudioCtx) soundBtn.hidden = true;
+
+  const hashPage = parseInt(location.hash.replace("#", ""), 10);
+  if (hashPage >= 1 && hashPage <= N) cur = hashPage - 1;
+  stage.insertBefore(makeLeaf(cur).leaf, stage.firstChild);
+  preload(cur + 1);
+  updateUI();
+
+  // ---------- Opening sequence: flying through space, then fading into the book ----------
+  const intro = $("intro"), reader = document.querySelector(".reader");
+  let introOver = false;
+
+  function endIntro() {
+    if (introOver) return;
+    introOver = true;
+    cancelAnimationFrame(raf);
+    intro.classList.add("done");
+    reader.inert = false;
+    setTimeout(() => { intro.remove(); }, 1800);
+    $("openSound").focus({ preventScroll: true });
+  }
+
+  const canvas = $("stars"), g2 = canvas.getContext("2d");
+  let raf = 0, W = 0, H = 0, stars = [];
+  function sizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    g2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function newStar(far) {
+    return { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2, z: far ? Math.random() : 1,
+             tint: Math.random() < 0.25 ? "143,214,232" : (Math.random() < 0.3 ? "201,168,255" : "255,255,255") };
+  }
+  function drawStars(speed) {
+    g2.fillStyle = "rgba(12,7,32,0.35)";           // leaves short light trails
+    g2.fillRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2, scale = Math.max(W, H) * 0.6;
+    for (const st of stars) {
+      const pz = st.z;
+      st.z -= speed;
+      if (st.z <= 0.02) { Object.assign(st, newStar(false)); continue; }
+      const sx = cx + (st.x / st.z) * scale * 0.5, sy = cy + (st.y / st.z) * scale * 0.5;
+      const px = cx + (st.x / pz) * scale * 0.5, py = cy + (st.y / pz) * scale * 0.5;
+      if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) { Object.assign(st, newStar(false)); continue; }
+      const a = Math.min(1, (1 - st.z) * 1.4 + 0.1);
+      g2.strokeStyle = "rgba(" + st.tint + "," + a + ")";
+      g2.lineWidth = 0.6 + (1 - st.z) * 2.2;
+      g2.beginPath(); g2.moveTo(px, py); g2.lineTo(sx, sy); g2.stroke();
+    }
+  }
+
+  function runIntro() {
+    reader.inert = true;
+    sizeCanvas();
+    window.addEventListener("resize", sizeCanvas);
+    const count = Math.min(420, Math.round(W * H / 3500));
+    for (let i = 0; i < count; i++) stars.push(newStar(true));
+    const reduced = reduceMotion.matches;
+
+    if (reduced) {
+      g2.fillStyle = "#0c0720"; g2.fillRect(0, 0, W, H);
+      for (let i = 0; i < 160; i++) { g2.fillStyle = "rgba(255,255,255," + (0.3 + Math.random() * 0.6) + ")"; g2.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5); }
+    } else {
+      g2.fillStyle = "#0c0720"; g2.fillRect(0, 0, W, H);
+      const t0 = performance.now();
+      const frame = (now) => {
+        const t = (now - t0) / 1000;
+        // glide in gently, cruise, then slow as the book appears
+        const speed = (t < 1.5 ? 0.0015 + t * 0.0017 : 0.0040) * (t > 7.2 ? Math.max(0.35, 1 - (t - 7.2) * 0.5) : 1);
+        drawStars(speed);
+        raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+    }
+
+    const show = (id, ms) => setTimeout(() => { if (!introOver) $(id).classList.add("show"); }, ms);
+    const k = reduced ? 0.25 : 1;
+    show("lTitle", 900 * k); show("lSub", 2000 * k);
+    show("lPres", 3800 * k); show("lGroup", 4600 * k); show("lNames", 5400 * k);
+    setTimeout(endIntro, reduced ? 3200 : 8600);
+  }
+
+  $("introSkip").addEventListener("click", (e) => { e.stopPropagation(); endIntro(); });
+  intro.addEventListener("click", endIntro);
+  document.addEventListener("keydown", (e) => { if (!introOver && (e.key === "Escape" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopImmediatePropagation(); endIntro(); } }, true);
+
+  if (hashPage >= 1 && hashPage <= N) { introOver = true; intro.remove(); } else { runIntro(); }
+})();
+</script>
+</body>
+</html>
